@@ -159,6 +159,74 @@ def signup_page():
         st.session_state.page = "home"
         st.rerun()
 
+# def dashboard():
+#     st.title(f"📊 Dashboard — Welcome {st.session_state.user}")
+
+#     if st.button("🚪 Logout"):
+#         st.session_state.user = None
+#         st.session_state.page = "home"
+#         st.rerun()
+
+#     uploaded = st.file_uploader("Upload Expense CSV", type=["csv"])
+
+#     if uploaded:
+#         sample = uploaded.read(2048).decode("utf-8", errors="ignore")
+#         uploaded.seek(0)
+
+#         try:
+#             delimiter = csv.Sniffer().sniff(sample).delimiter
+#         except:
+#             delimiter = ","
+
+#         df = pd.read_csv(uploaded, delimiter=delimiter, header=None)
+
+#         if df.shape[1] < 4:
+#             st.error("CSV must contain at least 4 columns.")
+#             return
+
+#         df.columns = ["date", "amount", "category", "description"]
+#         df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0)
+
+#         df = df[~df["category"].str.contains("income|salary|deposit", case=False, na=False)]
+
+#         summary = df.groupby("category")["amount"].sum().sort_values(ascending=False)
+#         total = summary.sum()
+
+#         st.metric("Total Spending", f"₹{total:,.2f}")
+#         st.dataframe(summary)
+
+#         fig, ax = plt.subplots()
+#         ax.bar(summary.index, summary.values)
+#         plt.xticks(rotation=45)
+#         st.pyplot(fig)
+
+#         st.subheader("🧠 AI Insights")
+
+#         if st.button("Generate AI Report"):
+#             prompt = f"""
+# You are a financial advisor. Analyze these expenses:
+
+# Total Spent: ₹{total:,.2f}
+
+# Breakdown:
+# {summary.to_string()}
+
+# Return insights, saving tips, and a budget plan.
+# """
+
+#             with st.spinner("Generating..."):
+#                 response = generate_with_retry(prompt)
+
+#             if not response:
+#                 st.error("AI couldn't generate response.")
+#                 return
+            
+#             safe_text = get_safe_response_text(response)
+
+#             if safe_text:
+#                 st.markdown(safe_text)
+#             else:
+#                 st.error("⚠️ AI did not return readable content. Try again.")
 def dashboard():
     st.title(f"📊 Dashboard — Welcome {st.session_state.user}")
 
@@ -181,52 +249,70 @@ def dashboard():
         df = pd.read_csv(uploaded, delimiter=delimiter, header=None)
 
         if df.shape[1] < 4:
-            st.error("CSV must contain at least 4 columns.")
+            st.error("CSV must contain at least 4 columns: date, amount, category, description.")
             return
 
         df.columns = ["date", "amount", "category", "description"]
         df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0)
 
-        df = df[~df["category"].str.contains("income|salary|deposit", case=False, na=False)]
+        # 🔥 NEW LOGIC: Detect Income vs Expenses
+        income_df = df[df["category"].str.contains("income|salary|deposit|credit", case=False, na=False)]
+        expenses_df = df[~df["category"].str.contains("income|salary|deposit|credit", case=False, na=False)]
 
-        summary = df.groupby("category")["amount"].sum().sort_values(ascending=False)
-        total = summary.sum()
+        total_income = income_df["amount"].sum()
+        total_expenses = expenses_df["amount"].sum()
+        savings = total_income - total_expenses
 
-        st.metric("Total Spending", f"₹{total:,.2f}")
-        st.dataframe(summary)
+        # Show financial metrics
+        col1, col2, col3 = st.columns(3)
+        col1.metric("💰 Total Income", f"₹{total_income:,.2f}")
+        col2.metric("💸 Total Expenses", f"₹{total_expenses:,.2f}")
+        col3.metric("📈 Savings", f"₹{savings:,.2f}", delta=savings)
 
+        # Expense Summary
+        st.subheader("📂 Expense Breakdown by Category")
+        expense_summary = expenses_df.groupby("category")["amount"].sum().sort_values(ascending=False)
+        st.dataframe(expense_summary)
+
+        # 📊 Bar Chart
         fig, ax = plt.subplots()
-        ax.bar(summary.index, summary.values)
+        ax.bar(expense_summary.index, expense_summary.values)
         plt.xticks(rotation=45)
         st.pyplot(fig)
 
+        st.divider()
+
+        # 🧠 AI Insights
         st.subheader("🧠 AI Insights")
 
         if st.button("Generate AI Report"):
             prompt = f"""
-You are a financial advisor. Analyze these expenses:
+Analyze this user's finances and provide a personalized report.
 
-Total Spent: ₹{total:,.2f}
+Income: ₹{total_income:,.2f}
+Expenses: ₹{total_expenses:,.2f}
+Savings: ₹{savings:,.2f}
 
-Breakdown:
-{summary.to_string()}
+Expense Breakdown:
+{expense_summary.to_string()}
 
-Return insights, saving tips, and a budget plan.
+Include:
+- Spending habits analysis
+- High expense areas
+- Recommended monthly budget targets
+- Savings and investment suggestions
+- Action items to improve financial health
 """
 
             with st.spinner("Generating..."):
                 response = generate_with_retry(prompt)
 
-            if not response:
-                st.error("AI couldn't generate response.")
-                return
-            
             safe_text = get_safe_response_text(response)
 
             if safe_text:
                 st.markdown(safe_text)
             else:
-                st.error("⚠️ AI did not return readable content. Try again.")
+                st.error("⚠️ Report could not be generated. Try again.")
 
 # -----------------------------------
 # Router
