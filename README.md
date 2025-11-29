@@ -16,7 +16,7 @@ Watch the full walkthrough of the app and features:
 ## 📂 Practice Files (Temporary)
 For testing and fast prototyping, use the sample CSV provided in the repo:
 
-- `practice_data.csv` — placeholder dataset for quick testing  
+- `sample_user_final.csv` — placeholder dataset for quick testing  
 - Feel free to replace it with your own sample transactions  
 
 ---
