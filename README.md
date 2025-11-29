@@ -9,7 +9,7 @@ FinSage is a lightweight, AI-powered finance companion built to help users track
 ## 📺 Project Demo (YouTube)
 Watch the full walkthrough of the app and features:
 
-👉 **YouTube Video:** _[Add your video link here]_  
+👉 **YouTube Video:**[ _[Pitch video FinSage]_  ](https://youtu.be/_33Dgn4H4es)
 
 ---
 
